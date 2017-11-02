@@ -37,7 +37,7 @@ while true; do
   [[ -n "$DEBUG" ]] && echo "Unhealthy nodes: $unhealthy"
 
   if [[ ${unhealthy[@]} = "" ]]; then
-    log "All nodes reported in"
+    [[ -n "$DEBUG" ]] && log "All nodes reported in"
   else
     for instance in ${unhealthy[@]}; do
       nodes[$instance]=$((nodes[$instance]+1))

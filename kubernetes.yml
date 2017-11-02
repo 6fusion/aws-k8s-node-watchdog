@@ -17,3 +17,6 @@ spec:
       containers:
       - name: aws-node-watchdog
         image: 6fusion/aws-k8s-node-watchdog:alpha
+        resources:
+          requests:
+            memory: "10Mi"
