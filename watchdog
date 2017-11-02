@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -e
+
+FAIL_COUNT=${FAIL_COUNT:-2}
+CHECK_INTERVAL=${CHECK_INTERVAL:-30}  # seconds
+
+region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')
+declare -A nodes='()'
+
+if [[ -n "$DEBUG" ]]; then
+  silent_flag=""
+  set -x
+else
+  silent_flag="-s"
+fi
+
+curl_k8s()
+{
+  curl $silent_flag \
+       -H "Content-type: application/json" \
+       -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+       --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+       https://$KUBERNETES_SERVICE_HOST/$@
+}
+
+log()
+{
+  echo -n "[$(date '+%Y-%m-%d %H:%M:%S')] "
+  echo $@
+}
+
+### Health-check code ###
+while true; do
+  [[ -n "$DEBUG" ]] && curl_k8s api/v1/nodes
+
+  unhealthy=$(curl_k8s api/v1/nodes/ | jq -r '.items[] | select(.status.conditions[] | contains({"type":"Ready","status":"Unknown"})  ) | .spec.externalID ')
+  [[ -n "$DEBUG" ]] && echo "Unhealthy nodes: $unhealthy"
+
+  if [[ ${unhealthy[@]} = "" ]]; then
+    log "All nodes reported in"
+  else
+    for instance in ${unhealthy[@]}; do
+      nodes[$instance]=$((nodes[$instance]+1))
+      if [[ -n ${nodes[${instance}]} ]] && [[ ${nodes[${instance}]} -eq $FAIL_COUNT ]]; then
+        log "Instance ${instance} in status \"Unknown\" ${FAIL_COUNT} times. Terminating."
+        aws autoscaling set-instance-health --region $region --health-status Unhealthy --instance-id $instance 
+      else
+        log "Instance ${instance} in status \"Unknown\" ${nodes[${instance}]} times."
+      fi
+    done
+  fi
+
+  for node in "${!nodes[@]}"; do
+    if [[ ! " ${unhealthy[@]} " =~ " ${node} " ]]; then
+      log "Instance ${node} reported in."
+      unset nodes[$instance]
+    fi
+  done
+
+  sleep $CHECK_INTERVAL
+done
