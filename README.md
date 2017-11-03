@@ -36,4 +36,3 @@ Note: The failure count for a node is reset if the node leaves the state of *Unk
 
 To deploy:
 ```kubectl apply -f kubernetes.yml```
-
