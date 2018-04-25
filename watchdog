@@ -36,7 +36,7 @@ while true; do
   node_json=$(curl_k8s /api/v1/nodes)
   total_node_count=$(echo $node_json | jq '.items | length')
 
-  unhealthy=($(echo $node_json | jq -r '.items[] | select(.status.conditions[] | contains({"type":"Ready","status":"Unknown"})  ) | .spec.externalID '))
+  unhealthy=($(echo $node_json | jq -r '.items[] | select(.status.conditions[] | contains({"type":"Ready","status":"Unknown"}) or contains({"type":"Ready","message":"not healthy"}) | .spec.externalID '))
   [[ -n "$DEBUG" ]] && echo "Unhealthy nodes: $unhealthy"
 
   # The first check is a "circuit breaker" that prevents this script from terminating the cluster; in the event of something
