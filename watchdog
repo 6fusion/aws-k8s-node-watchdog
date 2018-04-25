@@ -33,7 +33,7 @@ log()
 while true; do
   [[ -n "$DEBUG" ]] && curl_k8s api/v1/nodes
 
-  node_json=$(curl_k8s /api/v1/nodes)
+  node_json=$(curl_k8s api/v1/nodes)
   total_node_count=$(echo $node_json | jq '.items | length')
 
   unhealthy=($(echo $node_json | jq -r '.items[] | select(.status.conditions[] | contains({"type":"Ready","status":"Unknown"}) or contains({"type":"Ready","message":"not healthy"})) | .spec.externalID '))
