@@ -22,7 +22,7 @@ associated with the cluster).
 
 Authorization to interact with the Kubernetes API is obtained through the usual Kubernetes-injected variables and token.
 
-The following environment variables are available to customize the behavior of the health check:
+The following environment variables are available to customize the behavior of the health check. All are optional.
 
 | Variable  | Purpose |
 | ------------- | ------------- |
@@ -31,6 +31,22 @@ The following environment variables are available to customize the behavior of t
 | CHECK_INTERVAL | The interval, in seconds, between health checks. Defaults to 30 seconds. |
 | DEBUG | Set to `true` to see verbose output from the watchdog process |
 | FAIL_COUNT | The number of times a node is seen with the status of *Unknown*. Defaults to 2. |
+
+Note:
+The minimum required AWS permissions:
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "autoscaling:SetInstanceHealth",
+            "Resource": "arn:aws:autoscaling:*:*:autoScalingGroup:*:autoScalingGroupName/*"
+        }
+    ]
+}
+```
 
 Note: The failure count for a node is reset if the node leaves the state of *Unknown*.
 
